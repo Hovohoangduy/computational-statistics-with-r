@@ -1,10 +1,11 @@
+source("R/kde.R")
 # laod data
 whale <- read.table(file="data/whalemigration.dat")
 
 head(whale)
 range(whale)
 
-kde(data=whale$V1, y=1005, h=10)
+kde(data=whale$V1, y=mean(whale$V1), h=10, kernel = "consine")
 
 v <- seq(1, 10, by=0.1)
 # seq(1, 10, length.out=101)
@@ -14,10 +15,10 @@ min_whale <- min(whale)
 max_whale <- max(whale)
 
 y_val <- seq(min_whale, max_whale, length.out=201)
-kde_whale <- numeric(length(v1))
+kde_whale <- numeric(length(v))
 
 for (i in 1:length(y_val)) {
-  kde_whale[i] <- kde(data = whale$V1, y = y_val[i], h = 10)
+  kde_whale[i] <- kde(data = whale$V1, y = y_val[i], h = 10, kernel = "consine")
 }
 
 plot(x = y_val, y = kde_whale, type="l")
