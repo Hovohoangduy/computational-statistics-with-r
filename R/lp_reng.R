@@ -51,13 +51,13 @@ poly_reg <- function(x, y, x_eval, h = NULL, p, method = c("CV", "GCV")) {
   if (is.null(h)) {
     h_grid <- seq(sd(x) / 10, sd(x), length.out = 30)
     if (method == "CV") {
-      cv_vals <- sapply(h_grid, cv_lp, x = x, y = y, p = p)
+      cv_vals <- cv_lp(x, y, h_grid, p)
       h <- h_grid[which.min(cv_vals)]
     }
     
     if (method == "GCV") {
-      gcv_vals <- sapply(h_grid, cv_lp, x = x, y = y, p = p)
-      h <- h_grid(which.min(cv_vals))
+      gcv_vals <- gcv_lp(x, y, h_grid, p)
+      h <- h_grid[which.min(gcv_vals)]
     }
   }
   m_hat <- lp_reg(x, y, x_eval, h, p)
@@ -72,5 +72,4 @@ y <- sin(x) * rnorm(100, 0, 0.2)
 lp_reg(x = x, y = y, x_eval = 5, h = 0.5, p = 1)
 
 poly_reg(x = x, y = y, x_eval = 5, h = NULL, p = 1)
-
 
