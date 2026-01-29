@@ -10,7 +10,9 @@ lp_reg <- function(x, y, x_eval, h, p, kernel = "gauss") {
     Z[, j + 1] <- (x - x_eval)^j
   }
   w <- kernel_gauss((x - x_eval) / h)
+  if (sum(w > 1e-6) < (p + 1)) return(NULL)
   W = diag(w)
+  if (rcond(A) < 1e-12) return(NULL)
   M <- solve(t(Z) %*% W %*% Z) %*% t(Z) %*% W
   beta_hat <- M %*% y
   return(list(beta = beta_hat, S_row = M[1,]))
@@ -22,6 +24,7 @@ cv_lp <- function(x, y, h, p) {
   S_diag <- numeric(n)
   for (i in 1:n) {
     fit <- lp_reg(x, y, x_eval = x[i], h = h, p = p)
+    if (is.null(fit)) return(Inf)
     y_hat[i] <- fit$beta[1]
     S_diag[i] <- fit$S_row[i]
   }
@@ -49,7 +52,9 @@ poly_reg <- function(x, y, x_eval, h = NULL, p, method = c("CV", "GCV")) {
   method <- match.arg(method)
   
   if (is.null(h)) {
-    h_grid <- seq(sd(x) / 10, sd(x), length.out = 30)
+    h_min <- diff(range(x)) / 5
+    h_max <- diff(range(x))
+    h_grid <- seq(h_min, h_max, length.out = 30)
     if (method == "CV") {
       cv_vals <- cv_lp(x, y, h_grid, p)
       h <- h_grid[which.min(cv_vals)]
@@ -71,5 +76,34 @@ x <- sort(runif(100, 0, 10))
 y <- sin(x) * rnorm(100, 0, 0.2)
 lp_reg(x = x, y = y, x_eval = 5, h = 0.5, p = 1)
 
-poly_reg(x = x, y = y, x_eval = 5, h = NULL, p = 1)
+fit_center <- poly_reg(x = x, y = y, x_eval = 5, h = NULL, p = 1)
+h_opt <- fit_center$h
+
+x_grid <- seq(min(x), max(x), length.out = 200)
+m_hat <- sapply(x_grid, function(x0) {
+  fit <- lp_reg(
+    x = x,
+    y = y,
+    x_eval = x0,
+    h = h_opt,
+    p = 1
+  )
+  if (is.null(fit)) NA else fit$beta[1]
+})
+par(mar = c(5, 4, 4, 6))  # chừa chỗ cho legend
+
+plot(
+  x, y,
+  pch = 16,
+  col = rgb(0, 0, 0, 0.5),
+  xlab = "x",
+  ylab = "y",
+  main = "Local Linear Regression (p = 1)"
+)
+
+lines(
+  x_grid, m_hat,
+  col = "red",
+  lwd = 2
+)
 
